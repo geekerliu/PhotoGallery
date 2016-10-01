@@ -69,7 +69,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
 			final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0,
 					bitmapBytes.length);
 			Log.i(TAG, "Bitmap created");
-			
+			// 使用回调的这个Runnable来接收运行message
 			mResponseHandler.post(new Runnable() {
 				
 				@Override
