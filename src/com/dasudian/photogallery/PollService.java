@@ -2,10 +2,10 @@ package com.dasudian.photogallery;
 
 import java.util.ArrayList;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +20,9 @@ public class PollService extends IntentService {
 
 	private static final String TAG = "PollService";
 	private static final int POLL_INTERVAL = 1000 * 60 * 5;// 5 minutes
+	public static final String PREF_IS_ALARM_ON = "isAlarmOn";
+	public static final String ACTION_SHOW_NOTIFICATION = "com.dasudian.photogallery.SHOW_NOTIFICATION";
+	public static final String PERM_PRIVATE = "com.dasudian.photogallery.PRIVATE";
 
 	public PollService() {
 		super(TAG);
@@ -62,8 +65,7 @@ public class PollService extends IntentService {
 					.setContentTitle(r.getString(R.string.new_pictures_title))
 					.setContentText(r.getString(R.string.new_pictures_text))
 					.setContentIntent(pi).setAutoCancel(true).build();
-			NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-			notificationManager.notify(0, notification);
+			showBackgroundNotification(0, notification);
 		} else {
 			Log.i(TAG, "Got an old result: " + resultId);
 		}
@@ -73,6 +75,11 @@ public class PollService extends IntentService {
 		Log.i(TAG, "Received an intent: " + intent);
 	}
 
+	/**
+	 * 开启关闭后台服务
+	 * @param context
+	 * @param isOn
+	 */
 	public static void setServiceAlarm(Context context, boolean isOn) {
 		Intent i = new Intent(context, PollService.class);
 		PendingIntent pi = PendingIntent.getService(context, 0, i, 0);
@@ -85,12 +92,28 @@ public class PollService extends IntentService {
 			alarmManager.cancel(pi);
 			pi.cancel();
 		}
+		PreferenceManager.getDefaultSharedPreferences(context).edit()
+				.putBoolean(PollService.PREF_IS_ALARM_ON, isOn).commit();
 	}
 
+	/**
+	 * 判断后台服务是否已经开启
+	 * @param context
+	 * @return
+	 */
 	public static boolean isServiceAlarmOn(Context context) {
 		Intent i = new Intent(context, PollService.class);
 		PendingIntent pi = PendingIntent.getService(context, 0, i,
 				PendingIntent.FLAG_NO_CREATE);
 		return pi != null;
+	}
+
+	void showBackgroundNotification(int requestCode, Notification notification) {
+		Intent i = new Intent(ACTION_SHOW_NOTIFICATION);
+		i.putExtra("REQUEST_CODE", requestCode);
+		i.putExtra("NOTIFICATION", notification);
+
+		sendOrderedBroadcast(i, PERM_PRIVATE, null, null, Activity.RESULT_OK,
+				null, null);
 	}
 }
